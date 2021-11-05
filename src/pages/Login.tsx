@@ -1,12 +1,6 @@
 import { Image } from "@chakra-ui/image";
 import { useHistory } from "react-router-dom";
-import {
-  IonButton,
-  IonContent,
-  IonItem,
-  IonLabel,
-  IonPage,
-} from "@ionic/react";
+import { IonButton, IonContent, IonLabel, IonPage } from "@ionic/react";
 import React from "react";
 import logo from "../images/paygo.png";
 import { useState } from "react";
@@ -21,21 +15,66 @@ import {
   chakra,
   Box,
   Link,
-  Avatar,
   FormControl,
   FormHelperText,
   InputRightElement,
 } from "@chakra-ui/react";
 import { FaUserAlt, FaLock } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../Redux/actions/action";
 
 const CFaUserAlt = chakra(FaUserAlt);
 const CFaLock = chakra(FaLock);
 
 const Login: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  //getting complete state from redux
+  const state = useSelector((state: any) => state);
+  const isLoading = state.isLoading;
+  console.log(isLoading);
 
+  //init useDispatch
+  const dispatch = useDispatch();
+
+  // form data control for sign in
+  const [userData, setuserData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleInputChange = (e: any) => {
+    setuserData((prevState: any) => {
+      return {
+        ...prevState,
+        [e.target.name]: e.target.value,
+      };
+    });
+  };
+
+  //handles showing and unshowing password
+  const [showPassword, setShowPassword] = useState(false);
   const handleShowClick = () => setShowPassword(!showPassword);
-  const history = useHistory();
+
+  //error message on form
+  const [errorMessage, setErrorMessage] = useState({ value: "" });
+
+  //handles submitting the form
+  const handleSubmit = (e: any) => {
+    e.preventDefault();
+
+    if (userData.email === "" || userData.password === "") {
+      setErrorMessage((prevState) => ({
+        value: "Empty username/password field",
+      }));
+    } else {
+      dispatch({
+        type: "LOADING",
+      });
+      dispatch(login(userData));
+    }
+  };
+
+
+
   return (
     <IonPage>
       <IonContent fullscreen>
@@ -78,11 +117,13 @@ const Login: React.FC = () => {
                         />
                         <Input
                           type="email"
+                          name="email"
                           placeholder="Email address"
                           _placeholder={{ color: "#046494" }}
                           //   outlineColor="gray.400"
                           bg="gray.300"
                           rounded="md"
+                          onChange={(e) => handleInputChange(e)}
                         />
                       </InputGroup>
                     </FormControl>
@@ -94,12 +135,14 @@ const Login: React.FC = () => {
                           children={<CFaLock color="#046494" />}
                         />
                         <Input
+                          name="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="Password"
                           _placeholder={{ color: "#046494" }}
                           //   outlineColor="gray.400"
                           bg="gray.300"
                           rounded="md"
+                          onChange={(e) => handleInputChange(e)}
                         />
                         <InputRightElement width="4.5rem">
                           <Button
@@ -125,12 +168,11 @@ const Login: React.FC = () => {
                     <Button
                       borderRadius={0}
                       variant="solid"
-                      bg="#046494"
+                      isLoading={isLoading}
+                      bg="#046494 !important"
                       color="white"
                       width="full"
-                      onClick={() => {
-                        history.push("/dashboard");
-                      }}
+                      onClick={handleSubmit}
                     >
                       Login
                     </Button>

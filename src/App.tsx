@@ -26,11 +26,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Register from "./pages/Register";
 import Verification from "./pages/Verification";
 import Dasboard from "./pages/Dashboard";
+import history from "./history";
+import ProtectedRoute from "./components/ProtectedComponent";
 
 const App: React.FC = () => {
   return (
     <IonApp>
-      <IonReactRouter>
+      <IonReactRouter history={history}>
         <IonSplitPane contentId="main">
           <IonRouterOutlet id="main">
             <Route path="/" exact={true}>

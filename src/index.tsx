@@ -9,6 +9,7 @@ import { composeWithDevTools } from "redux-devtools-extension";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import reportWebVitals from "./reportWebVitals";
 import { ChakraProvider } from "@chakra-ui/react";
+import { Toaster } from "react-hot-toast";
 
 const store = createStore(
   mainReducer,
@@ -19,6 +20,7 @@ ReactDOM.render(
     <ChakraProvider>
       <Provider store={store}>
         <App />
+        <Toaster />;
       </Provider>
     </ChakraProvider>
   </React.StrictMode>,
