@@ -1,0 +1,8 @@
+{
+  "name": "paygomob",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react",
+  "id": "f3902277"
+}
