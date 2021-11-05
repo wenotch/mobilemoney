@@ -34,7 +34,7 @@ import QuickLinks from "../components/QuickLinks";
 const CFaUserAlt = chakra(FaUserAlt);
 const CFaLock = chakra(FaLock);
 
-const Dasboard: React.FC = () => {
+const Dashboard: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   
 
@@ -59,4 +59,4 @@ const Dasboard: React.FC = () => {
   );
 };
 
-export default Dasboard;
+export default Dashboard;

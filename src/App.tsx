@@ -25,7 +25,7 @@ import "./theme/variables.css";
 import ForgotPassword from "./pages/ForgotPassword";
 import Register from "./pages/Register";
 import Verification from "./pages/Verification";
-import Dasboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import history from "./history";
 import ProtectedRoute from "./components/ProtectedComponent";
 
@@ -55,9 +55,11 @@ const App: React.FC = () => {
               <Verification />
             </Route>
 
-            <Route path="/dashboard" exact={true}>
-              <Dasboard />
-            </Route>
+            <ProtectedRoute
+              path="/dashboard"
+              exact={true}
+              component={Dashboard}
+            />
           </IonRouterOutlet>
         </IonSplitPane>
       </IonReactRouter>
