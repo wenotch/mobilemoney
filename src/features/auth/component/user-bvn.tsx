@@ -5,20 +5,25 @@ import React from "react";
 import { View } from "react-native";
 import * as Yup from "yup";
 import { Input } from "../../../components/input";
-import { WizardEvent, WizardState } from "../../../lib/form-wizard/types";
+import { WizardState } from "../../../lib/form-wizard/types";
 import { globalStyles } from "../../../styles";
 import { UserFormLabels } from "../config/form-labels";
 
 interface Props {
-  send: (send: WizardEvent) => void;
-  current: WizardState<UserRegistration>;
+  submit: (data: Partial<UserRegistration>) => void;
+  previous: () => void;
+  current: WizardState<Partial<UserRegistration>>;
 }
 
 const validationSchema = Yup.object().shape<Partial<UserRegistration>>({
-  bvn: Yup.string().required().length(10).label(UserFormLabels.bvn),
+  bvn: Yup.string().required().length(11).label(UserFormLabels.bvn),
 });
 
-export const UserBVN: React.FC<Props> = ({ send, current }) => {
+export const UserBVN: React.FC<Props> = ({
+  submit: send,
+  current,
+  previous,
+}) => {
   const initialValues: Partial<UserRegistration> = { ...current.context.data };
 
   const { setFieldValue, handleSubmit, errors, touched } = useFormik<
@@ -27,18 +32,16 @@ export const UserBVN: React.FC<Props> = ({ send, current }) => {
     initialValues,
     validationSchema,
     onSubmit(values) {
-      send({ type: "SUBMIT", data: values });
+      send(values);
     },
   });
 
   const SubmitButton = () => (
     <Button
-      accessoryRight={(props: IconProps) => (
-        <Icon name="arrow-forward-outline" {...props} />
-      )}
       onPress={() => handleSubmit()}
+      disabled={current.matches("pending")}
     >
-      Create Account
+      {current.matches("pending") ? "Please wait..." : "Create Account"}
     </Button>
   );
 
@@ -47,7 +50,7 @@ export const UserBVN: React.FC<Props> = ({ send, current }) => {
       accessoryLeft={(props: IconProps) => (
         <Icon name="arrow-back-outline" {...props} />
       )}
-      onPress={() => send({ type: "PREV" })}
+      onPress={() => previous()}
     >
       Previous
     </Button>

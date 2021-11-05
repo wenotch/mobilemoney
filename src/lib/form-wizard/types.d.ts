@@ -1,19 +1,22 @@
+import { AxiosError } from "axios";
+import { ErrorType } from "paygo";
 import { Interpreter, State } from "xstate";
 
 export interface WizardContext<T = any> {
   maxSteps: number;
   currentStep: number;
-  message: string;
-  data: T | undefined;
+  message: string | null;
+  data: T | null;
 }
 
 export type WizardEvent<T = any> =
   | { type: "NEXT"; data: T }
   | { type: "PREV" }
   | { type: "SUBMIT"; data: T }
-  | { type: "ERROR"; response: any }
-  | { type: "SUCCESS"; response: any }
-  | { type: "INIT"; maxSteps: number };
+  | { type: "ERROR"; data: AxiosError<ErrorType> }
+  | { type: "done.invoke.submit"; data: any }
+  | { type: "INIT"; maxSteps: number }
+  | { type: "error.platform.submit"; data: ErrorType };
 
 export interface WizardStateSchema {
   states: {
@@ -51,4 +54,4 @@ export type ContextType<T = any> = {
   service: WizardService;
 };
 
-export type onSubmit<T = any> = (values: T) => void;
+export type onSubmit<T = any> = (values: T) => Promise<TResult | undefined>;

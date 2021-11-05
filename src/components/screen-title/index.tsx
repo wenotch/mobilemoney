@@ -11,7 +11,7 @@ export const ScreenTitle: React.FC<Props> = ({ title }) => {
   const route = useRoute();
 
   return (
-    <Text category="h1" style={{ color: Colors.white }}>
+    <Text category="h3" style={{ color: Colors.white, textAlign: "center" }}>
       {route.name ?? title}
     </Text>
   );

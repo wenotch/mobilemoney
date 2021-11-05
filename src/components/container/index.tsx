@@ -6,5 +6,11 @@ interface Props {
 }
 
 export const Container: React.FC<Props> = (props) => {
-  return <View style={{ ...props.style, padding: 20 }}>{props.children}</View>;
+  return (
+    <View
+      style={{ ...props.style, paddingLeft: 10, paddingRight: 10, flex: 1 }}
+    >
+      {props.children}
+    </View>
+  );
 };

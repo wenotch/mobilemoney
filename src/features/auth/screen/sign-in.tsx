@@ -1,27 +1,31 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { Button, Text } from "@ui-kitten/components";
+import { useService } from "@xstate/react";
 import { useFormik } from "formik";
 import { LoginCredentialType } from "paygo";
-import React, { useEffect } from "react";
-import { KeyboardAvoidingView } from "react-native";
-import { useMutation } from "react-query";
+import React, { useContext } from "react";
+import { Keyboard, KeyboardAvoidingView, View } from "react-native";
+import { showMessage } from "react-native-flash-message";
+import { QueryStatus, useMutation } from "react-query";
 import * as Yup from "yup";
-import { api } from "../../../api";
 import { Body } from "../../../components/body";
 import { Container } from "../../../components/container";
 import { Input } from "../../../components/input";
 import { Logo } from "../../../components/logo";
-import { Colors } from "../../../constants";
-import useFormWizard from "../../../lib/form-wizard/use-form-wizard";
+import { ScreenTitle } from "../../../components/screen-title";
+import { Colors, ErrorCodes, flashMessageDuration } from "../../../constants";
+import { SessionContext } from "../../../lib/session/context/session-context";
 import { AppRoutes } from "../../../navigator/app.route";
 import { globalStyles } from "../../../styles";
 import { UserFormLabels } from "../config/form-labels";
+import { resetPasswordService } from "../fsm/password-reset-machine";
+import { AuthService } from "../services/auth-service";
 
 const validationSchema = Yup.object().shape<LoginCredentialType>({
-  phone: Yup.string().required().min(5).max(15).label(UserFormLabels.phone),
+  email: Yup.string().required().email().label(UserFormLabels.email),
   password: Yup.string()
     .required()
-    .min(5)
+    .min(4)
     .max(15)
     .label(UserFormLabels.password),
 });
@@ -31,28 +35,64 @@ type LoginForm = LoginCredentialType;
 interface Props {}
 
 export const SignIn: React.FC<Props> = (_props) => {
-  const route = useRoute();
   const { navigate } = useNavigation();
+  const sessionContext = useContext(SessionContext);
+  const [state, send] = useService(resetPasswordService);
 
-  const [mutate] = useMutation(api.auth.login);
-  const { send, current } = useFormWizard({
-    onSubmit: mutate,
-  });
+  const [mutate, { status, error, reset, data: currentUser }] = useMutation(
+    AuthService.authenticate
+  );
 
-  useEffect(() => {
-    send("INIT", { maxSteps: 1 });
-  }, []);
-
-  const { setFieldValue, handleSubmit, errors, touched } = useFormik({
+  const { setFieldValue, handleSubmit, errors, touched, values } = useFormik({
     initialValues: {
-      phone: "",
+      email: "",
       password: "",
     } as LoginForm,
     validationSchema,
     async onSubmit(credentials) {
-      send("SUBMIT", { data: credentials });
+      Keyboard.dismiss();
+      await mutate(credentials);
     },
   });
+
+  if (currentUser) {
+    sessionContext!.setCurrentUser(currentUser);
+  }
+
+  if (status === QueryStatus.Error) {
+    const { name, message } = error as Error;
+
+    const nameStr = name && name.toString();
+
+    if (nameStr === ErrorCodes.email_verification_pending) {
+      navigate(AppRoutes.VERIFY_PHONE_NUMBER, {
+        id: values.email,
+      });
+    }
+
+    const errMsg =
+      nameStr === ErrorCodes.failed_auth || nameStr === ErrorCodes.not_found
+        ? "Invalid credential"
+        : message;
+
+    showMessage({
+      message: errMsg,
+      duration: flashMessageDuration,
+      autoHide: false,
+      type: "danger",
+      textStyle: { textAlign: "center", fontSize: 15, fontWeight: "bold" },
+    });
+
+    reset();
+  }
+
+  if (status === QueryStatus.Success) {
+    navigate(AppRoutes.MAIN);
+  }
+
+  if (state.matches({ requestResetToken: "idle" })) {
+    navigate(AppRoutes.REQUEST_PASSWORD_RESET);
+  }
 
   return (
     <Body style={{ ...globalStyles.blueBackground }}>
@@ -63,19 +103,21 @@ export const SignIn: React.FC<Props> = (_props) => {
           alignItems: "center",
         }}
       >
-        <Logo />
-        <Text category="h1" style={{ color: Colors.white }}>
-          {route.name}
-        </Text>
+        <View style={{ alignItems: "center" }}>
+          <Logo />
+          <ScreenTitle />
+        </View>
+
         <KeyboardAvoidingView behavior="padding">
           <Input
             style={{ ...globalStyles.input }}
-            label={UserFormLabels.phone}
-            placeholder="Enter your phone number"
-            onChangeText={(value) => setFieldValue("phone", value)}
-            caption={errors.phone && touched.phone ? errors.phone : ""}
-            status={errors.phone && touched.phone ? "danger" : ""}
-            keyboardType="number-pad"
+            label={UserFormLabels.email}
+            placeholder="Enter your email"
+            onChangeText={(value) => setFieldValue("email", value)}
+            caption={errors.email && touched.email ? errors.email : ""}
+            status={errors.email && touched.email ? "danger" : ""}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
           <Input
             style={{ ...globalStyles.input }}
@@ -84,14 +126,14 @@ export const SignIn: React.FC<Props> = (_props) => {
             onChangeText={(value) => setFieldValue("password", value)}
             caption={errors.password && touched.password ? errors.password : ""}
             status={errors.password && touched.password ? "danger" : ""}
+            secureTextEntry
           />
           <Button
             size="large"
             style={{ ...globalStyles.formButton }}
             onPress={() => handleSubmit()}
-            disabled={current.matches("pending")}
           >
-            LOGIN
+            {status === QueryStatus.Loading ? "Please wait..." : "LOGIN"}
           </Button>
         </KeyboardAvoidingView>
 
@@ -102,7 +144,10 @@ export const SignIn: React.FC<Props> = (_props) => {
             </Text>
           )}
         </Button>
-        <Button appearance="ghost">
+        <Button
+          appearance="ghost"
+          onPress={() => send("INITIATE_PASSWORD_RESET")}
+        >
           {() => (
             <Text style={{ color: Colors.white, fontSize: 16 }}>
               Forgotten password? Reset!

@@ -57,7 +57,9 @@ export const wizardMachine = Machine<
       type: "final",
     },
     error: {
-      on: { ...events },
+      after: {
+        "3000": "editing",
+      },
     },
   },
 });

@@ -2,13 +2,15 @@ import { Input as BaseInput, InputProps, Text } from "@ui-kitten/components";
 import React from "react";
 import { Colors } from "../../constants";
 
-interface Props extends InputProps {}
+interface Props extends InputProps {
+  color?: string;
+}
 
 export const Input: React.FC<Props> = (props) => (
   <BaseInput
     {...props}
     label={() => (
-      <Text style={{ color: Colors.white, paddingBottom: 4 }}>
+      <Text style={{ color: props.color || Colors.white, paddingBottom: 4 }}>
         {props.label as string}
       </Text>
     )}

@@ -1,20 +1,17 @@
-import { Button, IndexPath, SelectItem } from "@ui-kitten/components";
+import { Button } from "@ui-kitten/components";
 import { useFormik } from "formik";
-import { isArray } from "lodash";
 import { UserRegistration } from "paygo";
-import React, { useState } from "react";
+import React from "react";
 import { View } from "react-native";
 import * as Yup from "yup";
 import { Input } from "../../../components/input";
-import { Select } from "../../../components/select";
-import { WizardEvent, WizardState } from "../../../lib/form-wizard/types";
+import { WizardState } from "../../../lib/form-wizard/types";
 import { globalStyles } from "../../../styles";
 import { UserFormLabels } from "../config/form-labels";
-import { GenderOptions } from "../types";
 
 interface Props {
-  send: (event: WizardEvent) => void;
-  current: WizardState<UserRegistration>;
+  next: (data: Partial<UserRegistration>) => void;
+  current: WizardState<Partial<UserRegistration>>;
 }
 
 const validationSchema = Yup.object().shape<Partial<UserRegistration>>({
@@ -28,20 +25,12 @@ const validationSchema = Yup.object().shape<Partial<UserRegistration>>({
     .min(2)
     .max(30)
     .label(UserFormLabels.lastName),
-  middleName: Yup.string().min(2).max(30).label(UserFormLabels.middleName),
-  gender: Yup.string()
-    .oneOf(["Male", "Female"])
-    .required()
-    .label(UserFormLabels.gender),
+  phone: Yup.string().min(6).max(15).label(UserFormLabels.phone),
+  email: Yup.string().email().required().label(UserFormLabels.email),
 });
 
 export const UserProfile: React.FC<Props> = (props) => {
-  const [selectedIndex, setSelectedIndex] = useState(new IndexPath(0));
-  const { send, current } = props;
-
-  const gender = Object.values(GenderOptions);
-  const displayValue =
-    current.context.data!.gender ?? gender[selectedIndex.row];
+  const { next, current } = props;
 
   const initialValues: Partial<UserRegistration> = { ...current.context.data };
 
@@ -49,20 +38,9 @@ export const UserProfile: React.FC<Props> = (props) => {
     initialValues: (initialValues as unknown) as UserRegistration,
     validationSchema,
     onSubmit(values: UserRegistration) {
-      send({ type: "NEXT", data: values });
+      next(values);
     },
   });
-
-  const renderOptions = (g: string, i: number) => (
-    <SelectItem title={g} key={i} />
-  );
-
-  const onSelect = (index: IndexPath | IndexPath[]) => {
-    if (!isArray(index)) {
-      setSelectedIndex(index);
-      setFieldValue("gender", gender[index.row]);
-    }
-  };
 
   return (
     <View>
@@ -71,7 +49,6 @@ export const UserProfile: React.FC<Props> = (props) => {
           <Input
             label={UserFormLabels.firstName}
             style={{ ...globalStyles.input }}
-            placeholder="Enter your first name"
             onChangeText={(value) => setFieldValue("firstName", value)}
             caption={
               errors.firstName && touched.firstName ? errors.firstName : ""
@@ -84,7 +61,6 @@ export const UserProfile: React.FC<Props> = (props) => {
           <Input
             label={UserFormLabels.lastName}
             style={{ ...globalStyles.input }}
-            placeholder="Enter your last name"
             onChangeText={(value) => setFieldValue("lastName", value)}
             caption={errors.lastName && touched.lastName ? errors.lastName : ""}
             status={errors.lastName && touched.lastName ? "danger" : ""}
@@ -92,28 +68,27 @@ export const UserProfile: React.FC<Props> = (props) => {
           />
         </View>
       </View>
+
       <Input
-        label={UserFormLabels.middleName}
+        label={UserFormLabels.phone}
         style={{ ...globalStyles.input }}
-        placeholder="Enter other names"
-        onChangeText={(value) => setFieldValue("middleName", value)}
-        caption={
-          errors.middleName && touched.middleName ? errors.middleName : ""
-        }
-        status={errors.middleName && touched.middleName ? "danger" : ""}
-        value={values.middleName}
+        onChangeText={(value) => setFieldValue("phone", value)}
+        caption={errors.phone && touched.phone ? errors.phone : ""}
+        status={errors.phone && touched.phone ? "danger" : ""}
+        value={values.phone}
+        keyboardType="phone-pad"
       />
 
-      <Select
-        label={UserFormLabels.gender}
-        selectedIndex={selectedIndex}
-        onSelect={(index) => onSelect(index)}
-        value={displayValue}
-        status={errors.gender && touched.gender ? "danger" : ""}
-        caption={errors.gender && touched.gender ? errors.gender : ""}
-      >
-        {gender.map((g: string, i: number) => renderOptions(g, i))}
-      </Select>
+      <Input
+        label={UserFormLabels.email}
+        style={{ ...globalStyles.input }}
+        onChangeText={(value) => setFieldValue("email", value)}
+        caption={errors.email && touched.email ? errors.email : ""}
+        status={errors.email && touched.email ? "danger" : ""}
+        value={values.email}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
 
       <Button onPress={() => handleSubmit()} style={{ marginTop: 10 }}>
         Next

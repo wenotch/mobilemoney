@@ -5,13 +5,14 @@ import React from "react";
 import { View } from "react-native";
 import * as Yup from "yup";
 import { Input } from "../../../components/input";
-import { WizardEvent, WizardState } from "../../../lib/form-wizard/types";
+import { WizardState } from "../../../lib/form-wizard/types";
 import { globalStyles } from "../../../styles";
 import { UserFormLabels } from "../config/form-labels";
 
 interface Props {
-  send: (event: WizardEvent, data?: Partial<UserRegistration>) => void;
-  current: WizardState<UserRegistration>;
+  next: (data: Partial<UserRegistration>) => void;
+  previous: () => void;
+  current: WizardState<Partial<UserRegistration>>;
 }
 
 const validationSchema = Yup.object().shape<Partial<UserRegistration>>({
@@ -26,16 +27,20 @@ const validationSchema = Yup.object().shape<Partial<UserRegistration>>({
     .label(UserFormLabels.confirmPassword),
 });
 
-export const UserAccount: React.FC<Props> = ({ send, current }) => {
+export const UserAccount: React.FC<Props> = ({
+  next: send,
+  current,
+  previous,
+}) => {
   const initialValues: Partial<UserRegistration> = { ...current.context.data };
 
-  const { setFieldValue, handleSubmit, errors, touched } = useFormik<
+  const { setFieldValue, handleSubmit, errors, touched, values } = useFormik<
     Partial<UserRegistration>
   >({
     initialValues,
     validationSchema,
     onSubmit(values: Partial<UserRegistration>) {
-      send({ type: "NEXT", data: values });
+      send(values);
     },
   });
 
@@ -55,7 +60,7 @@ export const UserAccount: React.FC<Props> = ({ send, current }) => {
       accessoryLeft={(props: IconProps) => (
         <Icon name="arrow-back-outline" {...props} />
       )}
-      onPress={() => send({ type: "PREV" })}
+      onPress={() => previous()}
     >
       Previous
     </Button>
@@ -66,16 +71,15 @@ export const UserAccount: React.FC<Props> = ({ send, current }) => {
       <Input
         label={UserFormLabels.password}
         style={{ ...globalStyles.input }}
-        placeholder="Create password"
         onChangeText={(value) => setFieldValue("password", value)}
         caption={errors.password && touched.password ? errors.password : ""}
         status={errors.password && touched.password ? "danger" : ""}
         secureTextEntry
+        value={values.password}
       />
       <Input
         label={UserFormLabels.confirmPassword}
         style={{ ...globalStyles.input }}
-        placeholder="Confirm previously entered password"
         onChangeText={(value) => setFieldValue("confirmPassword", value)}
         caption={
           errors.confirmPassword && touched.confirmPassword
@@ -86,6 +90,7 @@ export const UserAccount: React.FC<Props> = ({ send, current }) => {
           errors.confirmPassword && touched.confirmPassword ? "danger" : ""
         }
         secureTextEntry
+        value={values.confirmPassword}
       />
 
       <View
